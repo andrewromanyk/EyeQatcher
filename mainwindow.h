@@ -7,7 +7,7 @@
 
 constexpr int TIMER_TIME_WORKING_DEFAULT    = 4000; //= 20 * 60 * 1000; // 20 minuts = 20 * 60 (s in m) * 1000 (ms in s)
 constexpr int TIMER_TIME_RESTING_DEFAULT    = 3000; //20 * 1000; // 20 seconds = 20  * 1000 (ms in s)
-constexpr int TIMER_INTERVAL_DEFAULT        = 100; // in case user spams start-stop; the timer should count those small intervals
+constexpr int TIMER_INTERVAL_DEFAULT        = 25; // in case user spams start-stop; the timer should count those small intervals
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -35,6 +35,7 @@ private:
     QElapsedTimer elapsed_timer;
     int timer_time_working          = TIMER_TIME_WORKING_DEFAULT;
     int timer_time_resting          = TIMER_TIME_RESTING_DEFAULT;
+    int timer_current_remaining     = timer_time_working;
     TimerStatus timer_status        = Working;
 
     void loadSettings();
@@ -50,5 +51,6 @@ public slots:
     void handleIntervalTimeout();
     void drawTimerLabel();
     void applyNewSettings();
+    void settingsSetDefaultValues();
 };
 #endif // MAINWINDOW_H
