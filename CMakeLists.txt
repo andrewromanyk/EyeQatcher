@@ -68,3 +68,10 @@ install(TARGETS EyeCatcher
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(EyeCatcher)
 endif()
+
+qt_add_resources(EyeCatcher "resources"
+    PREFIX "/icons"
+    BASE "resources/icons"
+    FILES
+        resources/icons/temp_tray.png
+)

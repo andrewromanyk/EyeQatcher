@@ -25,7 +25,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->settingsWorkTimeSpinBox->setRange(1, DEFAULT_VALUES::MAX_WORK_REST_TIME);
     ui->settingsWorkTimeSpinBox->setValue(timer_time_working);
 
-    //other settings
 
     //obj setups
     timer = new QTimer(this);
@@ -55,6 +54,13 @@ MainWindow::MainWindow(QWidget *parent)
     //  settings buttons
     connect(ui->settingsApplyButton, &QPushButton::clicked, this, &MainWindow::applyNewSettings);
     connect(ui->settingsDefaultButton, &QPushButton::clicked, this, &MainWindow::settingsSetDefaultValues);
+
+    //tray
+    tray_icon = new QSystemTrayIcon(this);
+    QIcon icon(":/icons/temp_tray.png");
+    qDebug() << "Is icon null " << icon.isNull();
+    tray_icon->setIcon(icon);
+    tray_icon->show();
 
     //obj starts
     drawTimerLabel();
