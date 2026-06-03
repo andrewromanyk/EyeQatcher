@@ -5,6 +5,8 @@
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QSystemTrayIcon>
+#include <QMenu>
+#include <QSoundEffect>
 
 constexpr int TIMER_TIME_WORKING_DEFAULT    = 4000; //= 20 * 60 * 1000; // 20 minuts = 20 * 60 (s in m) * 1000 (ms in s)
 constexpr int TIMER_TIME_RESTING_DEFAULT    = 3000; //20 * 1000; // 20 seconds = 20  * 1000 (ms in s)
@@ -34,7 +36,12 @@ private:
 
     QTimer* timer;
     QElapsedTimer elapsed_timer;
+
     QSystemTrayIcon* tray_icon;
+    QMenu* tray_menu;
+
+    QSoundEffect* sound_effect = new QSoundEffect(this);
+
 
     int timer_time_working          = TIMER_TIME_WORKING_DEFAULT;
     int timer_time_resting          = TIMER_TIME_RESTING_DEFAULT;
@@ -46,6 +53,16 @@ private:
     int getCurrentTimerStatusTime() {
         return timer_status == Working ? timer_time_working : timer_time_resting;
     }
+    void switchStatus() {
+        timer_status = timer_status == Working ? Resting : Working;
+    }
+    QString getCurrentTextLabelMain() {
+        if (timer->isActive()) {
+            return timer_status == Working ? "Working" : "Resting";
+        }
+
+        return "Waiting for action...";
+    }
 
 signals:
     void timerRanOut();
@@ -55,5 +72,7 @@ public slots:
     void drawTimerLabel();
     void applyNewSettings();
     void settingsSetDefaultValues();
+    void resetTimer();
+    void setMainPageStatusLabel();
 };
 #endif // MAINWINDOW_H

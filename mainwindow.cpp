@@ -7,7 +7,7 @@
 #include <QTime>
 
 namespace DEFAULT_VALUES {
-    constexpr int MAX_WORK_REST_TIME = 18'000'000;
+    constexpr int MAX_WORK_REST_TIME = 18'000;
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -18,13 +18,16 @@ MainWindow::MainWindow(QWidget *parent)
 
     //load settings
     loadSettings();
+    timer_current_remaining = timer_time_working;
 
     //additional ui setup
     ui->settingsRestTimeSpinBox->setRange(1, DEFAULT_VALUES::MAX_WORK_REST_TIME);
-    ui->settingsRestTimeSpinBox->setValue(timer_time_resting);
+    ui->settingsRestTimeSpinBox->setValue(timer_time_resting / 1000);
     ui->settingsWorkTimeSpinBox->setRange(1, DEFAULT_VALUES::MAX_WORK_REST_TIME);
-    ui->settingsWorkTimeSpinBox->setValue(timer_time_working);
+    ui->settingsWorkTimeSpinBox->setValue(timer_time_working / 1000);
 
+    ui->statusbar->setSizeGripEnabled(false);
+    setFixedSize(size());
 
     //obj setups
     timer = new QTimer(this);
@@ -32,18 +35,20 @@ MainWindow::MainWindow(QWidget *parent)
 
     //connections
 
-    //  timers
+    ///  timers
     connect(timer, &QTimer::timeout, this, &MainWindow::handleIntervalTimeout);
     connect(timer, &QTimer::timeout, this, &MainWindow::drawTimerLabel);
+    connect(timer, &QTimer::timeout, this, &MainWindow::setMainPageStatusLabel);
 
-    //  buttons timer start and stop
+    ///  buttons timer start and stop
     connect(ui->startButton, &QPushButton::clicked, timer, [this]() {
         timer->start();
         elapsed_timer.start();
     });
     connect(ui->stopButton, &QPushButton::clicked, timer, &QTimer::stop);
+    connect(ui->resetButton, &QPushButton::clicked, this, &MainWindow::resetTimer);
 
-    //  buttons change current tab
+    ///  buttons change current tab
     connect(ui->actionSettings, &QAction::triggered, this, [this]() {
         ui->stackedWidget->setCurrentIndex(1);
     });
@@ -51,16 +56,40 @@ MainWindow::MainWindow(QWidget *parent)
         ui->stackedWidget->setCurrentIndex(0);
     });
 
-    //  settings buttons
+    ///  settings buttons
     connect(ui->settingsApplyButton, &QPushButton::clicked, this, &MainWindow::applyNewSettings);
     connect(ui->settingsDefaultButton, &QPushButton::clicked, this, &MainWindow::settingsSetDefaultValues);
 
     //tray
     tray_icon = new QSystemTrayIcon(this);
+
     QIcon icon(":/icons/temp_tray.png");
-    qDebug() << "Is icon null " << icon.isNull();
     tray_icon->setIcon(icon);
+
+    tray_menu = new QMenu(this);
+
+    QAction* action_open = new QAction("Open", tray_menu);
+    tray_menu->addAction(action_open);
+    connect(action_open, &QAction::triggered, this, &MainWindow::show);
+
+    tray_menu->addSeparator();
+
+    QAction* action_exit = new QAction("Exit", tray_menu);
+    tray_menu->addAction(action_exit);
+    connect(action_exit, &QAction::triggered, qApp, &QApplication::quit);
+
+    connect(tray_icon, &QSystemTrayIcon::activated, this,
+        [this](QSystemTrayIcon::ActivationReason reason) {
+            if (reason == QSystemTrayIcon::Trigger)
+                show();
+        });
+
+    tray_icon->setContextMenu(tray_menu);
     tray_icon->show();
+
+    //audio player
+    sound_effect->setSource(QUrl("qrc:/sounds/timer_up.wav"));
+    sound_effect->setVolume(0.5);
 
     //obj starts
     drawTimerLabel();
@@ -75,10 +104,16 @@ void MainWindow::handleIntervalTimeout()
 {
     timer_current_remaining -= elapsed_timer.restart();
     if (timer_current_remaining <= 0) {
+        sound_effect->play();
+        tray_icon->showMessage( // maybe i should replace the entire norification with smth from Marketplace
+            "Timer's up",
+            "The timer has run out! (REPLACE IT!)",
+            QSystemTrayIcon::Information,   // NoIcon does nothing, i dont want to use custom icon.
+            15000);
         timer->stop();
         elapsed_timer.invalidate();
-        timer_status = timer_status == Working ? Resting : Working;
-        timer_current_remaining = timer_status == Working ? timer_time_working : timer_time_resting;
+        switchStatus();
+        timer_current_remaining = getCurrentTimerStatusTime();
     }
 }
 
@@ -87,20 +122,37 @@ void MainWindow::drawTimerLabel()
     QTime time = QTime::fromMSecsSinceStartOfDay(timer_current_remaining);
     ui->mainTimerLabel->setText(time.toString("mm:ss"));
     ui->msTimerLabel->setText(time.toString(".zzz"));
+    setMainPageStatusLabel();
 }
 
 void MainWindow::applyNewSettings()
 {
-    timer_time_working = ui->settingsWorkTimeSpinBox->value();
-    timer_time_resting = ui->settingsRestTimeSpinBox->value();
+    timer_time_working = ui->settingsWorkTimeSpinBox->value() * 1000;
+    timer_time_resting = ui->settingsRestTimeSpinBox->value() * 1000;
+
+    ui->statusbar->showMessage("Settings saved.", 5000);
 
     saveSettings();
 }
 
 void MainWindow::settingsSetDefaultValues()
 {
-    ui->settingsRestTimeSpinBox->setValue(TIMER_TIME_RESTING_DEFAULT);
-    ui->settingsWorkTimeSpinBox->setValue(TIMER_TIME_WORKING_DEFAULT);
+    ui->settingsRestTimeSpinBox->setValue(TIMER_TIME_RESTING_DEFAULT / 1000);
+    ui->settingsWorkTimeSpinBox->setValue(TIMER_TIME_WORKING_DEFAULT / 1000);
+
+    ui->statusbar->showMessage("Applied default values.", 5000);
+}
+
+void MainWindow::resetTimer()
+{
+    timer->stop();
+    timer_current_remaining = getCurrentTimerStatusTime();
+    drawTimerLabel();
+}
+
+void MainWindow::setMainPageStatusLabel()
+{
+    ui->currentStatusLabel->setText(getCurrentTextLabelMain());
 }
 
 void MainWindow::loadSettings()

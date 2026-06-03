@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -42,7 +42,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(EyeCatcher PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(EyeCatcher PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Multimedia)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
@@ -69,9 +69,16 @@ if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(EyeCatcher)
 endif()
 
-qt_add_resources(EyeCatcher "resources"
+qt_add_resources(EyeCatcher "icons"
     PREFIX "/icons"
     BASE "resources/icons"
     FILES
         resources/icons/temp_tray.png
+)
+
+qt_add_resources(EyeCatcher "sounds"
+    PREFIX "/sounds"
+    BASE "resources/sounds"
+    FILES
+        resources/sounds/timer_up.wav
 )
