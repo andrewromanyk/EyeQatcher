@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->settingsRestTimeSpinBox->setValue(timer_time_resting / 1000);
     ui->settingsWorkTimeSpinBox->setRange(1, DEFAULT_VALUES::MAX_WORK_REST_TIME);
     ui->settingsWorkTimeSpinBox->setValue(timer_time_working / 1000);
+    ui->settingsVolumeSlider->setValue(notification_volume);
 
     ui->statusbar->setSizeGripEnabled(false);
     setFixedSize(size());
@@ -55,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionHome_2, &QAction::triggered, this, [this]() {
         ui->stackedWidget->setCurrentIndex(0);
     });
+    connect(ui->actionExit, &QAction::triggered, QApplication::instance(), &QApplication::quit);
 
     ///  settings buttons
     connect(ui->settingsApplyButton, &QPushButton::clicked, this, &MainWindow::applyNewSettings);
@@ -89,7 +91,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     //audio player
     sound_effect->setSource(QUrl("qrc:/sounds/timer_up.wav"));
-    sound_effect->setVolume(0.5);
+    sound_effect->setVolume(getCurrentVolumeFloat());
 
     //obj starts
     drawTimerLabel();
@@ -130,6 +132,9 @@ void MainWindow::applyNewSettings()
     timer_time_working = ui->settingsWorkTimeSpinBox->value() * 1000;
     timer_time_resting = ui->settingsRestTimeSpinBox->value() * 1000;
 
+    notification_volume = ui->settingsVolumeSlider->value();
+    sound_effect->setVolume(getCurrentVolumeFloat());
+
     ui->statusbar->showMessage("Settings saved.", 5000);
 
     saveSettings();
@@ -139,6 +144,7 @@ void MainWindow::settingsSetDefaultValues()
 {
     ui->settingsRestTimeSpinBox->setValue(TIMER_TIME_RESTING_DEFAULT / 1000);
     ui->settingsWorkTimeSpinBox->setValue(TIMER_TIME_WORKING_DEFAULT / 1000);
+    ui->settingsVolumeSlider->setValue(NOTIFICATION_VOLUME_DEFAULT);
 
     ui->statusbar->showMessage("Applied default values.", 5000);
 }
@@ -165,8 +171,12 @@ void MainWindow::loadSettings()
     if (!settings.contains("resting_time"))
         settings.setValue("resting_time", TIMER_TIME_RESTING_DEFAULT);
 
+    if (!settings.contains("notification_volume"))
+        settings.setValue("notification_volume", NOTIFICATION_VOLUME_DEFAULT);
+
     timer_time_working = settings.value("working_time").toInt();
     timer_time_resting = settings.value("resting_time").toInt();
+    notification_volume = settings.value("notification_volume").toInt();
 }
 
 void MainWindow::saveSettings()
@@ -175,4 +185,5 @@ void MainWindow::saveSettings()
 
     settings.setValue("working_time", timer_time_working);
     settings.setValue("resting_time", timer_time_resting);
+    settings.setValue("notification_volume", notification_volume);
 }

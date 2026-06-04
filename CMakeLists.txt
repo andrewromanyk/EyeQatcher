@@ -23,6 +23,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(EyeCatcher
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        resources/sounds/timer_up.wav
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET EyeCatcher APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
